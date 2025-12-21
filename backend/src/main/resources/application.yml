@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:danceylone
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+
+  h2:
+    console:
+      enabled: true
+
+  flyway:
+    enabled: false
+
+
+#    Why these settings?
+#    •	mem:danceylone → in-memory DB
+#    •	flyway disabled → no migrations yet
+#    •	ddl-auto: none → no schema magic
+#    •	Keeps startup clean and predictable
