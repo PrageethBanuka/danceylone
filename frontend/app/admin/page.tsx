@@ -182,16 +182,16 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow opacity-50">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/admin/users')}>
             <CardHeader>
               <Users className="h-8 w-8 mb-2" />
               <CardTitle>Manage Users</CardTitle>
               <CardDescription>
-                View and manage customer accounts
+                View and manage user accounts with pagination
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" disabled>Coming Soon</Button>
+              <Button className="w-full">Go to Users</Button>
             </CardContent>
           </Card>
         </div>

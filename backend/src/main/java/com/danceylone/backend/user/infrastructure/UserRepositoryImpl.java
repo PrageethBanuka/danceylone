@@ -45,6 +45,40 @@ public class UserRepositoryImpl implements UserRepository {
                 .map(this::toDomain)
                 .collect(Collectors.toList());
     }
+    
+    /**
+     * PAGINATION IMPLEMENTATION
+     * 
+     * INTERVIEW TIP: Explain Spring Data Page<T>
+     * - Page<T> contains: content, totalElements, totalPages
+     * - Pageable contains: page, size, sort
+     * - We map Page<Entity> to Page<Domain>
+     */
+    @Override
+    public org.springframework.data.domain.Page<User> findAll(
+            org.springframework.data.domain.Pageable pageable) {
+        return jpaRepo.findAll(pageable)
+                .map(this::toDomain);
+    }
+    
+    @Override
+    public org.springframework.data.domain.Page<User> searchUsers(
+            String searchTerm, 
+            org.springframework.data.domain.Pageable pageable) {
+        // Case-insensitive search in email, first name, last name
+        return jpaRepo.findByEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+                searchTerm, searchTerm, searchTerm, pageable)
+                .map(this::toDomain);
+    }
+    
+    @Override
+    public org.springframework.data.domain.Page<User> findByRole(
+            String role, 
+            org.springframework.data.domain.Pageable pageable) {
+        // Find users where roles collection contains the specified role
+        return jpaRepo.findByRolesContaining(role, pageable)
+                .map(this::toDomain);
+    }
 
     @Override
     public User save(User user) {
