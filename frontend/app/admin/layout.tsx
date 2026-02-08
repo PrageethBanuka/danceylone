@@ -80,7 +80,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Admin Header */}
-      <header className="bg-black text-white py-4 px-6 shadow-lg">
+      <header className="bg-black text-white py-4 px-6 shadow-lg my-15">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <button

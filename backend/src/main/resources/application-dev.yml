@@ -1,0 +1,24 @@
+# Development Profile Configuration
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/danceylone_dev
+    driver-class-name: org.postgresql.Driver
+    username: danceylone_user
+    password: danceylone_dev_password
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+
+# Swagger enabled in dev
+springdoc:
+  swagger-ui:
+    enabled: true

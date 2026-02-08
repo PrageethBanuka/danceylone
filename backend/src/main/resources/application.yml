@@ -1,27 +1,14 @@
 spring:
   profiles:
-    active: dev
-  datasource:
-    url: jdbc:h2:mem:danceylone
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
   jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+    open-in-view: false  # Best practice for performance
 
-  h2:
-    console:
-      enabled: true
-
-  flyway:
-    enabled: false
-
-  jwt:
-    secret: ${JWT_SECRET}
-    expiration-millis: 3600000
+jwt:
+  # Development secret (512-bit base64). Change in production via JWT_SECRET env var!
+  secret: ${JWT_SECRET:dGhpc0lzQVZlcnlTZWN1cmVTZWNyZXRLZXlGb3JKV1RUb2tlbkVuY3J5cHRpb25BbmRTaG91bGRCZUNoYW5nZWRJblByb2R1Y3Rpb249}
+  expiration-millis: 3600000  # 1 hour
 
 # OpenAPI/Swagger Documentation
 springdoc:
