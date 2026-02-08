@@ -55,8 +55,14 @@ export const adminService = {
         // Orders endpoint might not be implemented yet
       }
 
-      // TODO: Fetch users count when user management endpoint is available
-      const totalUsers = 0;
+      // Fetch users count
+      let totalUsers = 0;
+      try {
+        const usersResponse = await api.get('/api/users');
+        totalUsers = usersResponse.data.length;
+      } catch {
+        // Users endpoint might not be accessible
+      }
 
       return {
         totalProducts,

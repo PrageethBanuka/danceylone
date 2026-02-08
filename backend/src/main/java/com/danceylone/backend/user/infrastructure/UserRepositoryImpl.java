@@ -40,6 +40,13 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
+    public java.util.List<User> findAll() {
+        return jpaRepo.findAll().stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public User save(User user) {
         UserEntity entity = toEntity(user);
         UserEntity persisted = jpaRepo.save(entity);
