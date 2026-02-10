@@ -1,13 +1,19 @@
 package com.danceylone.backend.user.api.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * User Response DTO
+ * User Response DTO (Phase 3 - Enhanced with status fields)
  * 
- * SECURITY: Never expose password hash
- * Only return safe user information
+ * Interview Tip: DTOs (Data Transfer Objects) are for API communication only.
+ * - They differ from domain models (separate concerns)
+ * - Can flatten complex domain objects
+ * - Never expose sensitive data (password hash, verification tokens)
+ * - Add documentation for frontend developers
+ * 
+ * SECURITY: Never expose password hash or email verification tokens
  */
 public record UserResponse(
     UUID id,
@@ -15,5 +21,11 @@ public record UserResponse(
     String firstName,
     String lastName,
     List<String> roles,
-    boolean active
+    boolean active,
+    boolean emailVerified,
+    boolean accountLocked,
+    LocalDateTime lockedUntil,
+    Integer failedLoginAttempts,
+    LocalDateTime lastLoginAt,
+    LocalDateTime createdAt
 ) {}

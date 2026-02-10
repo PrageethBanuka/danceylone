@@ -299,8 +299,9 @@ export default function UsersPage() {
           {/* PAGINATION */}
           <div className="mt-6 flex items-center justify-between">
             <div className="text-sm text-gray-700">
-              Showing {page * size + 1} to {Math.min((page + 1) * size, users.totalElements)} of{' '}
-              {users.totalElements} users
+              {users.totalElements > 0
+                ? `Showing ${page * size + 1} to ${Math.min((page + 1) * size, users.totalElements)} of ${users.totalElements} users`
+                : 'No users found'}
             </div>
 
             <div className="flex gap-2">

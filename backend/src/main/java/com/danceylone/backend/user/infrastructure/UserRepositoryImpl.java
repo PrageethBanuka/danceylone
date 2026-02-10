@@ -88,7 +88,10 @@ public class UserRepositoryImpl implements UserRepository {
     }
     
     /**
-     * Map JPA entity to domain model
+     * Map JPA entity to domain model (Phase 3 - complete mapping)
+     * 
+     * INTERVIEW: "Repository adapts between persistence and domain layers"
+     * "This is the Adapter Pattern from Gang of Four design patterns"
      */
     private User toDomain(UserEntity entity) {
         Set<Role> roles = entity.getRoles().stream()
@@ -102,15 +105,28 @@ public class UserRepositoryImpl implements UserRepository {
                 entity.getPasswordHash(),
                 entity.getFirstName(),
                 entity.getLastName(),
-                roles
+                roles,
+                entity.isActive(),
+                entity.isEmailVerified(),
+                entity.isAccountLocked(),
+                entity.getLockedUntil(),
+                entity.getFailedLoginAttempts(),
+                entity.getLastLoginAt(),
+                entity.getEmailVerificationToken(),
+                entity.getEmailVerificationSentAt(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt()
         );
     }
     
     /**
-     * Map domain model to JPA entity
+     * Map domain model to JPA entity (Phase 3 - complete mapping)
+     * 
+     * INTERVIEW: "Domain → Entity mapping for persistence"
+     * "Entity has setters, Domain is immutable - different concerns"
      */
     private UserEntity toEntity(User user) {
-        return new UserEntity(
+        UserEntity entity = new UserEntity(
                 user.getId(),
                 user.getEmail(),
                 user.getPasswordHash(),
@@ -118,5 +134,19 @@ public class UserRepositoryImpl implements UserRepository {
                 user.getLastName(),
                 user.getRoleNames()
         );
+        
+        // Set Phase 3 fields
+        entity.setActive(user.isActive());
+        entity.setEmailVerified(user.isEmailVerified());
+        entity.setAccountLocked(user.isAccountLocked());
+        entity.setLockedUntil(user.getLockedUntil());
+        entity.setFailedLoginAttempts(user.getFailedLoginAttempts());
+        entity.setLastLoginAt(user.getLastLoginAt());
+        entity.setEmailVerificationToken(user.getEmailVerificationToken());
+        entity.setEmailVerificationSentAt(user.getEmailVerificationSentAt());
+        entity.setCreatedAt(user.getCreatedAt());
+        entity.setUpdatedAt(user.getUpdatedAt());
+        
+        return entity;
     }
 }

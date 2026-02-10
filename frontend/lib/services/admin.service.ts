@@ -33,8 +33,13 @@ export interface Order {
 }
 
 /**
- * User Response DTO
+ * User Response DTO (Phase 3 - Enhanced)
  * Matches backend UserResponse.java
+ * 
+ * PRODUCTION ENHANCEMENT:
+ * - Status fields for account management
+ * - Security tracking (failed attempts, locks)
+ * - Audit timestamps
  */
 export interface UserResponse {
   id: string;
@@ -43,6 +48,12 @@ export interface UserResponse {
   lastName: string;
   roles: string[];
   active: boolean;
+  emailVerified: boolean;
+  accountLocked: boolean;
+  lockedUntil: string | null;
+  failedLoginAttempts: number;
+  lastLoginAt: string | null;
+  createdAt: string;
 }
 
 /**
@@ -190,6 +201,60 @@ export const adminService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching user ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Activate a user account (Phase 3)
+   * 
+   * PRODUCTION PATTERN: Admin actions with audit trail
+   * - Backend logs who performed the action
+   * - IP and user-agent automatically captured
+   * - Returns updated user for optimistic UI updates
+   */
+  async activateUser(userId: string): Promise<UserResponse> {
+    try {
+      const response = await api.put<UserResponse>(`/api/users/${userId}/activate`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error activating user ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Deactivate a user account (Phase 3)
+   * 
+   * SECURITY NOTE: Soft delete pattern
+   * - User account marked inactive
+   * - Data preserved for compliance
+   * - Can be reactivated later
+   */
+  async deactivateUser(userId: string): Promise<UserResponse> {
+    try {
+      const response = await api.put<UserResponse>(`/api/users/${userId}/deactivate`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deactivating user ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Unlock a locked user account (Phase 3)
+   * 
+   * USE CASE: User locked after failed login attempts
+   * - Customer support can manually unlock
+   * - Resets failed attempt counter
+   * - Audit logged for security review
+   */
+  async unlockUser(userId: string): Promise<UserResponse> {
+    try {
+      const response = await api.put<UserResponse>(`/api/users/${userId}/unlock`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error unlocking user ${userId}:`, error);
       throw error;
     }
   },
