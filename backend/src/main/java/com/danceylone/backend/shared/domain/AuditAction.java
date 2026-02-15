@@ -74,7 +74,14 @@ public enum AuditAction {
     ORDER_CANCELLED("Order cancelled"),
     ORDER_SHIPPED("Order shipped"),
     ORDER_DELIVERED("Order delivered"),
-    ORDER_REFUNDED("Order refunded");
+    ORDER_REFUNDED("Order refunded"),
+    
+    // ===== PRODUCT ACTIONS (Phase 4) =====
+    PRODUCT_CREATED("Product created"),
+    PRODUCT_UPDATED("Product updated"),
+    PRODUCT_DELETED("Product deleted"),
+    PRODUCT_STOCK_UPDATED("Product stock updated"),
+    PRODUCT_PRICE_UPDATED("Product price updated");
     
     private final String description;
     

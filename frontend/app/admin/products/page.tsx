@@ -164,20 +164,32 @@ export default function AdminProductsPage() {
 
       setIsModalOpen(false);
       fetchProducts();
-      toast.success(editingProduct ? 'Product Updated' : 'Product Created', 'Changes saved successfully');
+      const action = editingProduct ? 'updated' : 'created';
+      const message = `All changes are tracked in the audit log for compliance and security.`;
+      toast.success(
+        editingProduct ? 'Product Updated' : 'Product Created', 
+        `Product ${action} successfully. ${message}`
+      );
     } catch (err: any) {
       console.error('Error saving product:', err);
       apiToast.error(err, 'Failed to save product');
     }
   };
 
-  const handleDelete = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+  const handleDelete = async (productId: string, productName: string) => {
+    const confirmed = confirm(
+      `Delete "${productName}"?\n\n` +
+      `This will deactivate the product (soft delete).\n` +
+      `The action will be logged in the audit trail for compliance.\n\n` +
+      `Are you sure you want to continue?`
+    );
+    
+    if (!confirmed) return;
 
     try {
       await api.delete(`/api/products/${productId}`);
       fetchProducts();
-      toast.success('Product Deleted', 'Product removed successfully');
+      toast.success('Product Deleted', `"${productName}" deactivated. Audit log entry created for compliance tracking.`);
     } catch (err) {
       console.error('Error deleting product:', err);
       toast.error('Failed to delete product');
@@ -190,7 +202,7 @@ export default function AdminProductsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold">Product Management</h2>
-          <p className="text-neutral-600 mt-1">Manage your product catalog</p>
+          <p className="text-neutral-600 mt-1">Manage your product catalog with audit logging enabled</p>
         </div>
         <Button onClick={openCreateModal} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
@@ -258,9 +270,22 @@ export default function AdminProductsPage() {
                     <p className="text-sm text-neutral-700 line-clamp-2">
                       {product.description}
                     </p>
-                    <p className="text-xs text-neutral-500">
-                      Stock: {product.stockQuantity} units
-                    </p>
+                    
+                    {/* Stock Level with Warning */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-neutral-600">Stock:</span>
+                      <span className={`text-xs font-bold px-2 py-1 rounded ${
+                        product.stockQuantity === 0 
+                          ? 'bg-red-100 text-red-800' 
+                          : product.stockQuantity <= 10 
+                            ? 'bg-orange-100 text-orange-800' 
+                            : 'bg-green-100 text-green-800'
+                      }`}>
+                        {product.stockQuantity} units
+                        {product.stockQuantity === 0 && ' - Out of Stock!'}
+                        {product.stockQuantity > 0 && product.stockQuantity <= 10 && ' - Low Stock'}
+                      </span>
+                    </div>
 
                     <div className="flex gap-2">
                       <Button
@@ -275,7 +300,7 @@ export default function AdminProductsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(product.id)}
+                        onClick={() => handleDelete(product.id, product.name)}
                         className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="h-4 w-4 mr-1" />

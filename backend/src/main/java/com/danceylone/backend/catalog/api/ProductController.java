@@ -2,6 +2,10 @@ package com.danceylone.backend.catalog.api;
 
 import com.danceylone.backend.catalog.application.ProductService;
 import com.danceylone.backend.catalog.domain.Product;
+import com.danceylone.backend.shared.application.AuditService;
+import com.danceylone.backend.shared.domain.AuditAction;
+import com.danceylone.backend.user.domain.User;
+import com.danceylone.backend.user.domain.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,12 +14,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -47,9 +55,13 @@ import java.util.stream.Collectors;
 public class ProductController {
 
     private final ProductService productService;
+    private final AuditService auditService;
+    private final UserRepository userRepository;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService, AuditService auditService, UserRepository userRepository) {
         this.productService = productService;
+        this.auditService = auditService;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -159,7 +171,8 @@ public class ProductController {
     })
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(
-            @Valid @RequestBody CreateProductRequest request
+            @Valid @RequestBody CreateProductRequest request,
+            HttpServletRequest httpRequest
     ) {
         // Convert DTO → Domain
         Product product = new Product(
@@ -174,6 +187,23 @@ public class ProductController {
         );
 
         Product created = productService.createProduct(product);
+        
+        // Audit logging
+        try {
+            UUID performedBy = getCurrentUserId();
+            auditService.logAction(
+                performedBy,
+                AuditAction.PRODUCT_CREATED,
+                "PRODUCT",
+                created.getId(),
+                String.format("Product created: %s (Category: %s, Price: $%.2f)", 
+                             created.getName(), created.getCategory(), created.getPrice()),
+                getClientIp(httpRequest),
+                getUserAgent(httpRequest)
+            );
+        } catch (Exception e) {
+            // Audit logging should never break the main flow
+        }
         
         return ResponseEntity
                 .status(HttpStatus.CREATED)  // 201 Created
@@ -210,7 +240,8 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> updateProduct(
             @Parameter(description = "Product UUID") @PathVariable UUID id,
-            @Valid @RequestBody UpdateProductRequest request
+            @Valid @RequestBody UpdateProductRequest request,
+            HttpServletRequest httpRequest
     ) {
         // For update, we need to merge existing data with request data
         // In real app, you'd get existing product first, then apply changes
@@ -231,6 +262,23 @@ public class ProductController {
 
                     Product saved = productService.updateProduct(id, updated)
                             .orElseThrow();  // Should never throw since we just checked existence
+
+                    // Audit logging
+                    try {
+                        UUID performedBy = getCurrentUserId();
+                        auditService.logAction(
+                            performedBy,
+                            AuditAction.PRODUCT_UPDATED,
+                            "PRODUCT",
+                            saved.getId(),
+                            String.format("Product updated: %s (Category: %s, Price: $%.2f, Stock: %d)", 
+                                         saved.getName(), saved.getCategory(), saved.getPrice(), saved.getStockQuantity()),
+                            getClientIp(httpRequest),
+                            getUserAgent(httpRequest)
+                        );
+                    } catch (Exception e) {
+                        // Audit logging should never break the main flow
+                    }
 
                     return ResponseEntity.ok(toResponse(saved));
                 })
@@ -261,14 +309,69 @@ public class ProductController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(
-            @Parameter(description = "Product UUID") @PathVariable UUID id) {
+            @Parameter(description = "Product UUID") @PathVariable UUID id,
+            HttpServletRequest httpRequest) {
+        
+        // Get product info before deletion for audit log
+        Product product = productService.getProductById(id).orElse(null);
+        
         boolean deleted = productService.deactivateProduct(id);
         
-        if (deleted) {
+        if (deleted && product != null) {
+            // Audit logging
+            try {
+                UUID performedBy = getCurrentUserId();
+                auditService.logAction(
+                    performedBy,
+                    AuditAction.PRODUCT_DELETED,
+                    "PRODUCT",
+                    id,
+                    String.format("Product deleted: %s (Category: %s)", 
+                                 product.getName(), product.getCategory()),
+                    getClientIp(httpRequest),
+                    getUserAgent(httpRequest)
+                );
+            } catch (Exception e) {
+                // Audit logging should never break the main flow
+            }
+            
             return ResponseEntity.noContent().build();  // 204 No Content
         } else {
             return ResponseEntity.notFound().build();  // 404 Not Found
         }
+    }
+    
+    /**
+     * Get current authenticated user's ID
+     */
+    private UUID getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new IllegalStateException("No authenticated user");
+        }
+        
+        String email = authentication.getPrincipal().toString();
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new NoSuchElementException("Current user not found"));
+    }
+
+    /**
+     * Extract client IP address from request
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    /**
+     * Extract user agent from request
+     */
+    private String getUserAgent(HttpServletRequest request) {
+        return request.getHeader("User-Agent");
     }
 
     /**
